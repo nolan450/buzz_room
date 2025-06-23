@@ -5,6 +5,8 @@ import java.util.*;
 public class CLI {
 
     private final Map<Integer, Buzzer> buzzers = new HashMap<>();
+    private final Scoreboard scoreboard = new Scoreboard();
+
     private int reactivityMs = 10; // délai par défaut pour la gestion de simultanéité
 
     private final Scanner scanner = new Scanner(System.in);
@@ -44,6 +46,23 @@ public class CLI {
                 case "list":
                     listBuzzers();
                     break;
+                case "score":
+                    if (args.length < 3) {
+                        System.out.println("Usage: score <id> <+/-points>");
+                    } else {
+                        try {
+                            int id = Integer.parseInt(args[1]);
+                            int delta = Integer.parseInt(args[2]);
+                            scoreboard.updateScore(id, delta);
+                            System.out.println("Score du joueur " + id + " mis à jour.");
+                        } catch (NumberFormatException e) {
+                            System.out.println("Erreur : les arguments doivent être numériques.");
+                        }
+                    }
+                    break;
+                case "scores":
+                    scoreboard.printScores();
+                    break;
                 case "set-reactivity":
                     if (args.length < 2) {
                         System.out.println("Usage: set-reactivity <ms>");
@@ -68,15 +87,19 @@ public class CLI {
         System.out.println("- buzz-all         : simule tous les buzzers avec délai");
         System.out.println("- list             : liste les buzzers actifs");
         System.out.println("- set-reactivity <ms> : délai entre les buzz simultanés");
+        System.out.println("- score <id> <+/-points> : ajoute ou retire des points");
+        System.out.println("- scores                 : affiche les scores de tous les joueurs");
         System.out.println("- exit             : quitter");
     }
 
     private void initBuzzers(int count) {
         buzzers.clear();
+        scoreboard.clear();
         Random random = new Random();
         for (int i = 1; i <= count; i++) {
             int latency = random.nextInt(reactivityMs); // entre 0 et reactivityMs
             buzzers.put(i, new Buzzer(i, latency));
+            scoreboard.addPlayer(i);
         }
         System.out.println(count + " buzzers initialisés.");
     }
