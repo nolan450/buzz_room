@@ -8,6 +8,7 @@ public class CLI {
     private final Scoreboard scoreboard = new Scoreboard();
 
     private int reactivityMs = 10; // délai par défaut pour la gestion de simultanéité
+    private Random random = new Random();
 
     private final Scanner scanner = new Scanner(System.in);
 
@@ -95,10 +96,9 @@ public class CLI {
     private void initBuzzers(int count) {
         buzzers.clear();
         scoreboard.clear();
-        Random random = new Random();
         for (int i = 1; i <= count; i++) {
-            int latency = random.nextInt(reactivityMs); // entre 0 et reactivityMs
-            buzzers.put(i, new Buzzer(i, latency));
+             // entre 0 et reactivityMs
+            buzzers.put(i, new Buzzer(i));
             scoreboard.addPlayer(i);
         }
         System.out.println(count + " buzzers initialisés.");
@@ -110,8 +110,10 @@ public class CLI {
             System.out.println("Buzzer " + id + " non trouvé.");
             return;
         }
-        long timestamp = b.buzz();
-        System.out.println("Buzzer " + id + " a buzzé avec délai " + b.getLatencyMs() + " ms (timestamp = " + timestamp + ")");
+        long timestamp = System.currentTimeMillis();
+        
+        int latency = random.nextInt(reactivityMs);
+        System.out.println("Buzzer " + id + " a buzzé avec délai " + latency + " ms (timestamp = " + timestamp + ")");
     }
 
     private void simulateAllBuzzes() {
@@ -122,7 +124,7 @@ public class CLI {
 
         Map<Integer, Long> results = new HashMap<>();
         for (Buzzer b : buzzers.values()) {
-            results.put(b.getId(), b.buzz());
+            results.put(b.getId(), System.currentTimeMillis());
         }
 
         results.entrySet().stream()
@@ -138,6 +140,6 @@ public class CLI {
             System.out.println("Aucun buzzer actif.");
             return;
         }
-        buzzers.forEach((id, b) -> System.out.println("Buzzer " + id + " - Latence: " + b.getLatencyMs() + " ms"));
+        buzzers.forEach((id, b) -> System.out.println("Buzzer " + id));
     }
 }
