@@ -1,20 +1,19 @@
 package com.buzzroom;
 
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
 
 public class CLI {
 
     private final Map<Integer, Buzzer> buzzers = new HashMap<>();
     private final Scoreboard scoreboard = new Scoreboard();
-
-    private int reactivityMs = 10; // délai par défaut pour la gestion de simultanéité
-    private Random random = new Random();
-
-    // Pour la gestion des buzzers actifs
-    private Integer activePlayerId = null;
+    private int reactivityMs = 10;
+    
     private Timer responseTimer = new Timer();
-    private boolean buzzLocked = false;
-
+    private final Lock speechLock = new ReentrantLock();
+    private volatile boolean isSpeaking = false;
 
     private final Scanner scanner = new Scanner(System.in);
 
@@ -44,7 +43,7 @@ public class CLI {
                     if (args.length < 2) {
                         System.out.println("Usage: buzz <id_buzzer>");
                     } else {
-                        simulateBuzz(Integer.parseInt(args[1]));
+                        triggerBuzz(Integer.parseInt(args[1]));
                     }
                     break;
                 case "buzz-all":
@@ -80,6 +79,7 @@ public class CLI {
                     break;
                 case "exit":
                     System.out.println("Fermeture de Buzz Room CLI...");
+                    scanner.close();
                     return;
                 case "reset":
                     resetGame();
@@ -92,59 +92,90 @@ public class CLI {
 
     private void printHelp() {
         System.out.println("Commandes disponibles :");
-        System.out.println("- init             : initialise n buzzers");
-        System.out.println("- buzz <id>        : simule un buzz du buzzer");
-        System.out.println("- buzz-all         : simule tous les buzzers avec délai");
-        System.out.println("- list             : liste les buzzers actifs");
+        System.out.println("- init <nombre_buzzers> : initialise n buzzers");
+        System.out.println("- buzz <id> : simule un buzz du buzzer");
+        System.out.println("- buzz-all : simule tous les buzzers avec délai");
+        System.out.println("- list : liste les buzzers actifs");
         System.out.println("- set-reactivity <ms> : délai entre les buzz simultanés");
         System.out.println("- score <id> <+/-points> : ajoute ou retire des points");
-        System.out.println("- scores                 : affiche les scores de tous les joueurs");
-        System.out.println("- reset            : réinitialise le tour (débloque les buzzers)");
-        System.out.println("- exit             : quitter");
+        System.out.println("- scores : affiche les scores de tous les joueurs");
+        System.out.println("- reset : réinitialise le tour (débloque les buzzers)");
+        System.out.println("- exit : quitter");
     }
 
     private void initBuzzers(int count) {
         buzzers.clear();
         scoreboard.clear();
         for (int i = 1; i <= count; i++) {
-             // entre 0 et reactivityMs
-            buzzers.put(i, new Buzzer(i));
-            scoreboard.addPlayer(i);
+            final int buzzerId = i;
+            Buzzer buzzer = new Buzzer(buzzerId);
+            buzzers.put(buzzerId, buzzer);
+            scoreboard.addPlayer(buzzerId);
+
+            final Condition condition = speechLock.newCondition();
+            buzzer.setCondition(condition);
+
+            new Thread(() -> {
+                while (true) {
+                    speechLock.lock();
+                    try {
+                        condition.await();
+                        if (!isSpeaking) {
+                            isSpeaking = true;
+                            System.out.println("Buzzer " + buzzerId + " a la parole.");
+                            System.out.println("⏳ Le joueur " + buzzerId + " a 10 secondes pour parler...");
+
+                            Timer timer = new Timer();
+                            timer.schedule(new TimerTask() {
+                                @Override
+                                public void run() {
+                                    speechLock.lock();
+                                    try {
+                                        System.out.println("🔔 Temps écoulé pour le joueur " + buzzerId + " !");
+                                        isSpeaking = false;
+                                    } finally {
+                                        speechLock.unlock();
+                                    }
+                                }
+                            }, 10_000);
+
+                            while (isSpeaking) {
+                                try {
+                                    speechLock.unlock();
+                                    Thread.sleep(100);
+                                    speechLock.lock();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            timer.cancel();
+                        } else {
+                            System.out.println("Buzzer " + buzzerId + " a essayé de buzzer, mais la parole est déjà prise.");
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } finally {
+                        speechLock.unlock();
+                    }
+                }
+            }).start();
         }
         System.out.println(count + " buzzers initialisés.");
     }
 
-    private void simulateBuzz(int id) {
-        if (buzzLocked) {
-            System.out.println("Un joueur est déjà en train de répondre. Attente de réinitialisation.");
-            return;
-        }
-
-        Buzzer b = buzzers.get(id);
-        if (b == null) {
+    private void triggerBuzz(int id) {
+        Buzzer buzzer = buzzers.get(id);
+        if (buzzer == null) {
             System.out.println("Buzzer " + id + " non trouvé.");
             return;
         }
 
-        int latency = random.nextInt(reactivityMs);
-        long timestamp = System.currentTimeMillis();
-
-        System.out.println("Buzzer " + id + " a buzzé avec délai " + latency + " ms (timestamp = " + timestamp + ")");
-
-        // Activer le joueur
-        activePlayerId = id;
-        buzzLocked = true;
-
-        System.out.println("⏳ Le joueur " + id + " a 10 secondes pour répondre...");
-
-        // Lancer le chrono
-        responseTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                System.out.println("🔔 Temps écoulé pour le joueur " + id + " !");
-                System.out.println("Veuillez valider ou refuser la réponse.");
-            }
-        }, 10_000); // 10 secondes
+        speechLock.lock();
+        try {
+            buzzer.getCondition().signal();
+        } finally {
+            speechLock.unlock();
+        }
     }
 
     private void simulateAllBuzzes() {
@@ -153,17 +184,14 @@ public class CLI {
             return;
         }
 
-        Map<Integer, Long> results = new HashMap<>();
-        for (Buzzer b : buzzers.values()) {
-            results.put(b.getId(), System.currentTimeMillis());
+        speechLock.lock();
+        try {
+            for (Buzzer buzzer : buzzers.values()) {
+                buzzer.getCondition().signal();
+            }
+        } finally {
+            speechLock.unlock();
         }
-
-        results.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue())
-                .forEach(e -> System.out.println("Buzzer " + e.getKey() + " a buzzé à " + e.getValue() + " ms"));
-
-        int winner = results.entrySet().stream().min(Map.Entry.comparingByValue()).get().getKey();
-        System.out.println("🏆 Le premier à buzz : Buzzer " + winner);
     }
 
     private void listBuzzers() {
@@ -175,11 +203,9 @@ public class CLI {
     }
 
     private void resetGame() {
-        activePlayerId = null;
-        buzzLocked = false;
         responseTimer.cancel();
         responseTimer = new Timer();
+        isSpeaking = false;
         System.out.println("🔁 Système réinitialisé. Prêt pour une nouvelle question.");
     }
-
 }
