@@ -10,6 +10,12 @@ public class CLI {
     private int reactivityMs = 10; // délai par défaut pour la gestion de simultanéité
     private Random random = new Random();
 
+    // Pour la gestion des buzzers actifs
+    private Integer activePlayerId = null;
+    private Timer responseTimer = new Timer();
+    private boolean buzzLocked = false;
+
+
     private final Scanner scanner = new Scanner(System.in);
 
     public void start() {
@@ -75,6 +81,9 @@ public class CLI {
                 case "exit":
                     System.out.println("Fermeture de Buzz Room CLI...");
                     return;
+                case "reset":
+                    resetGame();
+                    break;
                 default:
                     System.out.println("Commande inconnue. Tape 'help' pour l'aide.");
             }
@@ -90,6 +99,7 @@ public class CLI {
         System.out.println("- set-reactivity <ms> : délai entre les buzz simultanés");
         System.out.println("- score <id> <+/-points> : ajoute ou retire des points");
         System.out.println("- scores                 : affiche les scores de tous les joueurs");
+        System.out.println("- reset            : réinitialise le tour (débloque les buzzers)");
         System.out.println("- exit             : quitter");
     }
 
@@ -105,15 +115,36 @@ public class CLI {
     }
 
     private void simulateBuzz(int id) {
+        if (buzzLocked) {
+            System.out.println("Un joueur est déjà en train de répondre. Attente de réinitialisation.");
+            return;
+        }
+
         Buzzer b = buzzers.get(id);
         if (b == null) {
             System.out.println("Buzzer " + id + " non trouvé.");
             return;
         }
-        long timestamp = System.currentTimeMillis();
-        
+
         int latency = random.nextInt(reactivityMs);
+        long timestamp = System.currentTimeMillis();
+
         System.out.println("Buzzer " + id + " a buzzé avec délai " + latency + " ms (timestamp = " + timestamp + ")");
+
+        // Activer le joueur
+        activePlayerId = id;
+        buzzLocked = true;
+
+        System.out.println("⏳ Le joueur " + id + " a 10 secondes pour répondre...");
+
+        // Lancer le chrono
+        responseTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println("🔔 Temps écoulé pour le joueur " + id + " !");
+                System.out.println("Veuillez valider ou refuser la réponse.");
+            }
+        }, 10_000); // 10 secondes
     }
 
     private void simulateAllBuzzes() {
@@ -142,4 +173,13 @@ public class CLI {
         }
         buzzers.forEach((id, b) -> System.out.println("Buzzer " + id));
     }
+
+    private void resetGame() {
+        activePlayerId = null;
+        buzzLocked = false;
+        responseTimer.cancel();
+        responseTimer = new Timer();
+        System.out.println("🔁 Système réinitialisé. Prêt pour une nouvelle question.");
+    }
+
 }
