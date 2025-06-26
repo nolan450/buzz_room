@@ -4,18 +4,18 @@ import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.Condition;
+import org.eclipse.paho.client.mqttv3.MqttException;
 
 public class CLI {
 
     private final Map<Integer, Buzzer> buzzers = new HashMap<>();
     private final Scoreboard scoreboard = new Scoreboard();
     private int reactivityMs = 10;
-    
     private Timer responseTimer = new Timer();
     private final Lock speechLock = new ReentrantLock();
     private volatile boolean isSpeaking = false;
-
     private final Scanner scanner = new Scanner(System.in);
+    private final HiveMqMqttClient mqttClient = new HiveMqMqttClient();
 
     public void start() {
         System.out.println("Bienvenue dans Buzz Room CLI !");
@@ -80,6 +80,11 @@ public class CLI {
                 case "exit":
                     System.out.println("Fermeture de Buzz Room CLI...");
                     scanner.close();
+                    try {
+                        mqttClient.disconnect();
+                    } catch (MqttException e) {
+                        e.printStackTrace();
+                    }
                     return;
                 case "reset":
                     resetGame();
@@ -124,6 +129,12 @@ public class CLI {
                             isSpeaking = true;
                             System.out.println("Buzzer " + buzzerId + " a la parole.");
                             System.out.println("⏳ Le joueur " + buzzerId + " a 10 secondes pour parler...");
+
+                            try {
+                                mqttClient.publish("buzzroom/buzz", String.valueOf(buzzerId));
+                            } catch (MqttException e) {
+                                e.printStackTrace();
+                            }
 
                             Timer timer = new Timer();
                             timer.schedule(new TimerTask() {
