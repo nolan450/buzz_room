@@ -8,8 +8,8 @@ public class HiveMqMqttClient {
 
     private static final String BROKER = "ssl://0d773a1094b84a4a982ea09b1ded8ae9.s1.eu.hivemq.cloud:8883";
     private static final String CLIENT_ID = "buzzroom-client";
-    private static final String USERNAME = "nolan13";
-    private static final String PASSWORD = "Test13100";
+    private static final String USERNAME = "CLI_IOT";
+    private static final String PASSWORD = "Cli12345";
 
     private MqttClient client;
 

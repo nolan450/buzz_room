@@ -17,7 +17,7 @@ public class CLI {
     private final Scanner scanner = new Scanner(System.in);
     private final HiveMqMqttClient mqttClient = new HiveMqMqttClient();
 
-    public void start() {
+    public void start() throws MqttException {
         System.out.println("Bienvenue dans Buzz Room CLI !");
         System.out.println("Tape une commande (help pour la liste)");
 
@@ -108,7 +108,7 @@ public class CLI {
         System.out.println("- exit : quitter");
     }
 
-    private void initBuzzers(int count) {
+    private void initBuzzers(int count) throws MqttException {
         buzzers.clear();
         scoreboard.clear();
         for (int i = 1; i <= count; i++) {
@@ -171,6 +171,8 @@ public class CLI {
                 }
             }).start();
         }
+
+        mqttClient.publish("buzzroom/register", String.valueOf(count));
         System.out.println(count + " buzzers initialisés.");
     }
 

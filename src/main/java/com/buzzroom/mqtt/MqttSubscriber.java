@@ -27,7 +27,7 @@ public class MqttSubscriber {
 
             MqttClient client = new MqttClient(
                     "ssl://0d773a1094b84a4a982ea09b1ded8ae9.s1.eu.hivemq.cloud:8883",
-                    "buzzroom-client"
+                    "buzzroom-test"
             );
             client.connect(options);
 
@@ -55,8 +55,8 @@ public class MqttSubscriber {
                 public void deliveryComplete(IMqttDeliveryToken token) {}
             });
 
-            client.subscribe("buzzroom/buzzer/+");
-            System.out.println("✅ Abonné à buzzroom/buzzer/+");
+            client.subscribe("buzzroom/+");
+            System.out.println("✅ Abonné à buzzroom/+");
 
         } catch (Exception e) {
             e.printStackTrace();
