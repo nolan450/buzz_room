@@ -1,0 +1,166 @@
+/* Reset & Base */
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e2e8f0 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  color: #333;
+}
+
+.container {
+  max-width: 500px;
+  width: 90%;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.header-content {
+  flex: 1;
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2563eb;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+.card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+#main-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  text-align: center;
+}
+
+.icon-large {
+  font-size: 2.5rem;
+  color: #2563eb;
+  margin-bottom: 1rem;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
+.status-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.response-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.response-buttons .btn {
+  flex: 1;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-new-game {
+  background-color: #4b5563;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  margin-left: 1rem;
+}
+
+.btn-new-game:hover, .btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+.btn-success { background-color: #16a34a; }
+.btn-danger  { background-color: #8B0000; } /* Un rouge plus sombre pour "Perdu" */
+.btn-new-game { background-color: #4b5563; }
+
+.scores h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2563eb;
+  margin-bottom: 1rem;
+}
+
+#scoreList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#scoreList li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #eee;
+  font-weight: 500;
+}
+
+#scoreList li:last-child {
+  border-bottom: none;
+}
+
+#scoreList li span {
+  font-weight: 600;
+  color: #16a34a;
+}
