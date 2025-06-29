@@ -1,5 +1,6 @@
 package com.buzzroom.mqtt;
 
+import com.buzzroom.controller.SseController;
 import com.buzzroom.service.GameService;
 import jakarta.annotation.PostConstruct;
 import org.eclipse.paho.client.mqttv3.*;
@@ -11,9 +12,11 @@ import javax.net.ssl.SSLSocketFactory;
 public class MqttSubscriber {
 
     private final GameService gameService;
+    private final SseController sseController;
 
-    public MqttSubscriber(GameService gameService) {
+    public MqttSubscriber(GameService gameService, SseController sseController) {
         this.gameService = gameService; // 🔗 injection du service
+        this.sseController = sseController;
     }
 
     @PostConstruct
@@ -42,10 +45,23 @@ public class MqttSubscriber {
                     String payload = new String(message.getPayload());
                     System.out.println("📩 MQTT reçu [" + topic + "] : " + payload);
 
-                    // ✨ Exemple d'appel au service
                     try {
                         int playerId = Integer.parseInt(payload.trim());
-                        gameService.handleBuzz(playerId);
+
+                        if (topic.equals("buzzroom/buzz")) {
+                            //gameService.handleBuzz(playerId);
+                            sseController.sendEvent("buzz:" + playerId);
+                        }
+
+                        else if (topic.equals("buzzroom/register")) {
+                            //gameService.registerPlayer(playerId);
+                            sseController.sendEvent("register:" + playerId);
+                        }
+
+                        else {
+                            System.out.println("⚠️ Topic inconnu : " + topic);
+                        }
+
                     } catch (NumberFormatException e) {
                         System.out.println("⚠️ Payload non numérique : " + payload);
                     }

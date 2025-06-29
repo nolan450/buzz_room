@@ -21,8 +21,11 @@
     </div>
 
     <div id="main-box" class="card">
-      <i class="fas fa-spinner fa-pulse icon-large"></i>
-      <p class="status-text">En attente d'une réponse...</p>
+      <div id="buzz-info">
+        <i id="buzz-icon" class="fas fa-bell icon-large"></i>
+        <p class="status-text" id="statusText">En attente d'une réponse...</p>
+        <p id="countdown" class="countdown-text" style="font-size: 1.5rem; margin-top: 10px;"></p>
+      </div>
     </div>
 
     <div class="response-buttons">
@@ -38,7 +41,9 @@
       <h2>
         <i class="fas fa-trophy"></i> Scores
       </h2>
-      <ul id="scoreList"></ul>
+      <ul id="scoreList">
+
+      </ul>
     </div>
   </div>
 
