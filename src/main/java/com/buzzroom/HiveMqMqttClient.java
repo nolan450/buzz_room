@@ -15,6 +15,7 @@ public class HiveMqMqttClient {
 
     public void connect() throws MqttException {
         MqttConnectOptions options = new MqttConnectOptions();
+        System.out.println("🔗 Connexion à HiveMQ Cloud...");
         options.setSocketFactory(SSLSocketFactory.getDefault());
         options.setUserName(USERNAME);
         options.setPassword(PASSWORD.toCharArray());
