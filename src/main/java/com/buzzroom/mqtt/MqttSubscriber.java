@@ -48,18 +48,16 @@ public class MqttSubscriber {
                     try {
                         int playerId = Integer.parseInt(payload.trim());
 
-                        if (topic.equals("buzzroom/buzz")) {
-                            //gameService.handleBuzz(playerId);
-                            sseController.sendEvent("buzz:" + playerId);
-                        }
-
-                        else if (topic.equals("buzzroom/register")) {
-                            //gameService.registerPlayer(playerId);
-                            sseController.sendEvent("register:" + playerId);
-                        }
-
-                        else {
-                            System.out.println("⚠️ Topic inconnu : " + topic);
+                        switch(topic) {
+                            case "buzzroom/buzz":
+                                gameService.handleBuzz(playerId);
+                                break;
+                            case "buzzroom/register":
+                                gameService.registerPlayers(playerId); // ici playerId = count
+                                break;
+                            default:
+                                System.out.println("⚠️ Topic inconnu : " + topic);
+                                return; // Sortie si le topic n'est pas reconnu
                         }
 
                     } catch (NumberFormatException e) {

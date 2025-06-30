@@ -30,10 +30,19 @@ sse.onmessage = (event) => {
         countdown.innerText = `⏳ Temps restant : ${timeLeft}s`;
 
         if (timeLeft <= 0) {
-          clearInterval(countdownInterval);
-          countdown.innerText = "⛔ Temps écoulé !";
+          resetVisualState();
         }
       }, 1000);
+      break;
+
+    case "valid":
+      console.log(`✅ Joueur ${payload} a donné une bonne réponse.`);
+      const playerLi = document.getElementById(`player-${payload}`);
+      if (playerLi) {
+        // Met à jour le score manuellement (+1)
+        let current = parseInt(playerLi.querySelector("span").innerText);
+        playerLi.querySelector("span").innerText = `${current + 1} pts`;
+      }
       break;
 
 
@@ -59,6 +68,36 @@ sse.onmessage = (event) => {
       console.log("⚠️ Type SSE inconnu :", type);
   }
 };
+
+async function handleCorrectAnswer() {
+  try {
+    const res = await fetch(`${API_BASE}/api/validate/${DEFAULT_ID}`, { method: "POST" });
+    const text = await res.text();
+    console.log(`[VALIDATE] ${text}`);
+    resetVisualState();
+  } catch (err) {
+    console.error("[VALIDATE] Erreur :", err);
+  }
+}
+
+async function handleWrongAnswer() {
+  try {
+    const res = await fetch(`${API_BASE}/api/penalize/${DEFAULT_ID}`, { method: "POST" });
+    const text = await res.text();
+    console.log(`[PENALIZE] ${text}`);
+    resetVisualState();
+  } catch (err) {
+    console.error("[PENALIZE] Erreur :", err);
+  }
+}
+
+function resetVisualState() {
+  clearInterval(countdownInterval);
+  document.getElementById("statusText").innerText = "En attente d'une réponse...";
+  document.getElementById("buzz-icon").className = "fas fa-bell icon-large";
+  document.getElementById("countdown").innerText = "";
+}
+
 
 
 // Démarrage

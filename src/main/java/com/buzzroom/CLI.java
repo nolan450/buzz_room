@@ -110,66 +110,8 @@ public class CLI {
 
     private void initBuzzers(int count) throws MqttException {
         buzzers.clear();
-        scoreboard.clear();
         for (int i = 1; i <= count; i++) {
-            final int buzzerId = i;
-            Buzzer buzzer = new Buzzer(buzzerId);
-            buzzers.put(buzzerId, buzzer);
-            scoreboard.addPlayer(buzzerId);
-
-            final Condition condition = speechLock.newCondition();
-            buzzer.setCondition(condition);
-
-            new Thread(() -> {
-                while (true) {
-                    speechLock.lock();
-                    try {
-                        condition.await();
-                        if (!isSpeaking) {
-                            isSpeaking = true;
-                            System.out.println("Buzzer " + buzzerId + " a la parole.");
-                            System.out.println("⏳ Le joueur " + buzzerId + " a 10 secondes pour parler...");
-
-                            try {
-                                mqttClient.publish("buzzroom/buzz", String.valueOf(buzzerId));
-                            } catch (MqttException e) {
-                                e.printStackTrace();
-                            }
-
-                            Timer timer = new Timer();
-                            timer.schedule(new TimerTask() {
-                                @Override
-                                public void run() {
-                                    speechLock.lock();
-                                    try {
-                                        System.out.println("🔔 Temps écoulé pour le joueur " + buzzerId + " !");
-                                        isSpeaking = false;
-                                    } finally {
-                                        speechLock.unlock();
-                                    }
-                                }
-                            }, 10_000);
-
-                            while (isSpeaking) {
-                                try {
-                                    speechLock.unlock();
-                                    Thread.sleep(100);
-                                    speechLock.lock();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                            timer.cancel();
-                        } else {
-                            System.out.println("Buzzer " + buzzerId + " a essayé de buzzer, mais la parole est déjà prise.");
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } finally {
-                        speechLock.unlock();
-                    }
-                }
-            }).start();
+            buzzers.put(i, new Buzzer(i));
         }
 
         mqttClient.publish("buzzroom/register", String.valueOf(count));
@@ -177,17 +119,15 @@ public class CLI {
     }
 
     private void triggerBuzz(int id) {
-        Buzzer buzzer = buzzers.get(id);
-        if (buzzer == null) {
+        if (!buzzers.containsKey(id)) {
             System.out.println("Buzzer " + id + " non trouvé.");
             return;
         }
 
-        speechLock.lock();
         try {
-            buzzer.getCondition().signal();
-        } finally {
-            speechLock.unlock();
+            mqttClient.publish("buzzroom/buzz", String.valueOf(id));
+        } catch (MqttException e) {
+            e.printStackTrace();
         }
     }
 
